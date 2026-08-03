@@ -1,30 +1,26 @@
 #include <iostream>
+#include <cstring>
 
-#include "Buffer/StaticBuffer.h"
-#include "Cache/OpenRelTable.h"
 #include "Disk_Class/Disk.h"
-#include "FrontendInterface/FrontendInterface.h"
+#include "define/constants.h"
 
 int main(int argc, char *argv[]) {
-  /* Initialize the Run Copy of Disk */
-  Disk disk_run;
 
-  unsigned char buffer[BLOCK_SIZE];
-  Disk::readBlock(buffer, 7000);
-  char message[] = "hello";
-  memcpy(buffer + 20, message, 6);
-  Disk::writeBlock(buffer, 7000);
+    Disk disk_run;
 
-  unsigned char buffer2[BLOCK_SIZE];
-  char message2[6];
-  Disk::readBlock(buffer2, 7000);
-  memcpy(message2, buffer2 + 20, 6);
-  std::cout << message2 << std::endl;
+    unsigned char buffer[BLOCK_SIZE];
 
-  return 0;
+    // Read the first Block Allocation Map block
+    Disk::readBlock(buffer, 0);
 
-  // StaticBuffer buffer;
-  // OpenRelTable cache;
+    std::cout << "First 20 entries of Block Allocation Map:\n";
 
-  // return FrontendInterface::handleFrontend(argc, argv);
+    for(int i = 0; i < 20; i++)
+    {
+        std::cout << (int)buffer[i] << " ";
+    }
+
+    std::cout << std::endl;
+
+    return 0;
 }
