@@ -59,3 +59,23 @@ int RecBuffer::getRecord(union Attribute *rec, int slotNum) {
 
   return SUCCESS;
 }
+
+
+// Done for STAGE 2 Exercise
+int RecBuffer::setRecord(union Attribute *rec, int slotNum)
+{
+    HeadInfo head;
+    this->getHeader(&head);
+
+    unsigned char buffer[BLOCK_SIZE];
+    Disk::readBlock(buffer, this->blockNum);
+
+    int recordSize = head.numAttrs * ATTR_SIZE;
+
+    unsigned char *slotPointer = buffer + HEADER_SIZE + head.numSlots + (recordSize * slotNum);
+
+    memcpy(slotPointer, rec, recordSize);
+
+    Disk::writeBlock(buffer, this->blockNum);
+    return SUCCESS;
+}

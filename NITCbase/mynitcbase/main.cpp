@@ -44,6 +44,15 @@ int main(int argc, char *argv[]) {
             if (strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal,
                     relCatRecord[RELCAT_REL_NAME_INDEX].sVal) == 0) 
             {
+                // Modification for STAGE 2 Exercise Q2: 
+                // In "Students" relation, Change the attribute name "Class" to "Batch"
+                if (strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal, "Students") == 0 &&
+                    strcmp(attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal, "Class") == 0)
+                {
+                    strcpy(attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal, "Batch");
+                    attrCatBuffer.setRecord(attrCatRecord, j);
+                }
+
                 const char *attrType = attrCatRecord[ATTRCAT_ATTR_TYPE_INDEX].nVal == NUMBER ? "NUM" : "STR";
                 printf("  %s: %s\n", attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal, attrType);
             }
