@@ -148,6 +148,86 @@ OpenRelTable::OpenRelTable() {
 
   // set the value at AttrCacheTable::attrCache[ATTRCAT_RELID]
   AttrCacheTable::attrCache[ATTRCAT_RELID] = listHead;
+
+
+
+
+  /* --------------------------
+  🗒️🖊️ Stage 3 EXERCISE: Print catalog entries for "Students"
+  -------------------------- */
+  HeadInfo relCatHeader;
+  relCatBlock.getHeader(&relCatHeader);
+
+  int studentsSlot = -1;
+
+  for (int i = 0; i < relCatHeader.numEntries; i++) {
+    Attribute relCatRecord[RELCAT_NO_ATTRS];
+    relCatBlock.getRecord(relCatRecord, i);
+
+    if (strcmp(relCatRecord[RELCAT_REL_NAME_INDEX].sVal, "Students") == 0) {
+      studentsSlot = i;
+      break;
+    }
+  }
+
+  int studentsRelId = 2;  // Cache Students using rel-id 2
+
+  if (studentsSlot != -1) {
+    Attribute relCatRecord[RELCAT_NO_ATTRS];
+    relCatBlock.getRecord(relCatRecord, studentsSlot);
+
+    RelCacheEntry *entry = (RelCacheEntry *) malloc(sizeof(RelCacheEntry));
+
+    RelCacheTable::recordToRelCatEntry(
+        relCatRecord,
+        &entry->relCatEntry
+    );
+
+    entry->recId.block = RELCAT_BLOCK;
+    entry->recId.slot = studentsSlot;
+
+    RelCacheTable::relCache[studentsRelId] = entry;
+
+
+    // Cache Students' attributes
+    RecBuffer attrCatBlock(ATTRCAT_BLOCK);
+
+    HeadInfo attrCatHeader;
+    attrCatBlock.getHeader(&attrCatHeader);
+
+    AttrCacheEntry *head = nullptr;
+    AttrCacheEntry *tail = nullptr;
+
+    for (int i = 0; i < attrCatHeader.numEntries; i++) {
+
+      Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
+
+      attrCatBlock.getRecord(attrCatRecord, i);
+
+      if (strcmp(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal, "Students") != 0)
+        continue;
+
+      AttrCacheEntry *attrEntry = (AttrCacheEntry *) malloc(sizeof(AttrCacheEntry));
+
+      AttrCacheTable::recordToAttrCatEntry(
+          attrCatRecord,
+          &attrEntry->attrCatEntry
+      );
+
+      attrEntry->recId.block = ATTRCAT_BLOCK;
+      attrEntry->recId.slot = i;
+      attrEntry->next = nullptr;
+
+      if (head == nullptr)
+        head = attrEntry;
+      else
+        tail->next = attrEntry;
+
+      tail = attrEntry;
+    }
+
+    AttrCacheTable::attrCache[studentsRelId] = head;
+  }
 }
 
 

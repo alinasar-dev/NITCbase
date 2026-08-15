@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
           printf("  %s: %s\n", attrName, attrType);
   */
   
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     RelCatEntry relCatEntry;
     RelCacheTable::getRelCatEntry(i, &relCatEntry);
     printf ("Relation: %s\n", relCatEntry.relName);
