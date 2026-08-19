@@ -47,6 +47,8 @@ int RecBuffer::getSlotMap(unsigned char *slotMap) {
 
   struct HeadInfo head;
   ret = getHeader(&head);  // get the header of the block using getHeader() function
+  if (ret != SUCCESS)
+    return ret;
 
   int slotCount = head.numSlots;
 

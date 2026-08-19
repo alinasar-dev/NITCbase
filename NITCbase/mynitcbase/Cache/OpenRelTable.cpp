@@ -18,6 +18,12 @@ int OpenRelTable::getRelId(char relName[ATTR_SIZE]) {
     return ATTRCAT_RELID;
   }
 
+  /* --- Implemeted for STAGE 4 (Exercise Q1) --- */
+  // return Students relational ID (already cached at 2)
+  if (strcmp(relName, "Students") == 0) {
+    return 2;
+  }
+
   return E_RELNOTOPEN;
 }
 
@@ -290,4 +296,22 @@ OpenRelTable::~OpenRelTable() {
   }
 
   AttrCacheTable::attrCache[ATTRCAT_RELID] = nullptr;
+
+
+  // Free the Relation Cache entry for Students.
+  if (RelCacheTable::relCache[2] != nullptr) {
+    free(RelCacheTable::relCache[2]);
+    RelCacheTable::relCache[2] = nullptr;
+  }
+
+  // Free the Attribute Cache linked list for Students.
+  entry = AttrCacheTable::attrCache[2];
+
+  while (entry != nullptr) {
+    AttrCacheEntry *next = entry->next;
+    free(entry);
+    entry = next;
+  }
+
+  AttrCacheTable::attrCache[2] = nullptr;
 }

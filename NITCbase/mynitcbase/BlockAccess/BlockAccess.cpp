@@ -52,7 +52,7 @@ RecId BlockAccess::linearSearch(int relId, char attrName[ATTR_SIZE], union Attri
             return {-1, -1};
 
         // get slot map of the block using RecBuffer::getSlotMap() function
-        unsigned char slotMap[SLOTMAP_SIZE_RELCAT_ATTRCAT];
+        unsigned char slotMap[head.numSlots];
         ret = recBuffer.getSlotMap(slotMap);
         if (ret != SUCCESS)
             return {-1, -1};
@@ -77,7 +77,7 @@ RecId BlockAccess::linearSearch(int relId, char attrName[ATTR_SIZE], union Attri
             of the relation using AttrCacheTable::getAttrCatEntry()
         */
         RelCatEntry relCatEntry;
-        RelCacheTable::getRelCatEntry(relId, &relCatEntry);
+        ret = RelCacheTable::getRelCatEntry(relId, &relCatEntry);
         if (ret != SUCCESS)
             return {-1, -1};
         
