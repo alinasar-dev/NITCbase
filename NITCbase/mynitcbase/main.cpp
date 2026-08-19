@@ -16,34 +16,5 @@ int main(int argc, char *argv[]) {
   StaticBuffer buffer;
   OpenRelTable cache;
 
-  /*
-  for i = 0 and i = 1 (i.e RELCAT_RELID and ATTRCAT_RELID)
-
-      get the relation catalog entry using RelCacheTable::getRelCatEntry()
-      printf("Relation: %s\n", relname);
-
-      for j = 0 to numAttrs of the relation - 1
-          get the attribute catalog entry for (rel-id i, attribute offset j)
-           in attrCatEntry using AttrCacheTable::getAttrCatEntry()
-
-          printf("  %s: %s\n", attrName, attrType);
-  */
-  
-  for (int i = 0; i < 3; i++) {
-    RelCatEntry relCatEntry;
-    RelCacheTable::getRelCatEntry(i, &relCatEntry);
-    printf ("Relation: %s\n", relCatEntry.relName);
-
-    for (int j = 0; j < relCatEntry.numAttrs; j++) {
-      AttrCatEntry attrCatEntry;
-      AttrCacheTable::getAttrCatEntry(i, j, &attrCatEntry);
-
-      const char *attrType = attrCatEntry.attrType == NUMBER ? "NUM": "STR";
-
-      printf (" %s: %s\n", attrCatEntry.attrName, attrType);
-    }
-    printf("\n");
-  }
-
-  return 0;
+  return FrontendInterface::handleFrontend(argc, argv);
 }
