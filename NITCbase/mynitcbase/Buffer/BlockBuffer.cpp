@@ -95,7 +95,7 @@ int RecBuffer::getRecord(union Attribute *rec, int slotNum) {
 }
 
 
-// Done for STAGE 2 Exercise
+// Modified for Stage 6: Buffer & LRU
 int RecBuffer::setRecord(union Attribute *rec, int slotNum)
 {
     HeadInfo head;
@@ -112,7 +112,12 @@ int RecBuffer::setRecord(union Attribute *rec, int slotNum)
 
     memcpy(slotPointer, rec, recordSize);
 
-    Disk::writeBlock(bufferPtr, this->blockNum);
+    // mark block as dirty
+    ret = StaticBuffer::setDirtyBit(this->blockNum);
+    if (ret != SUCCESS) {
+      return ret;
+    }
+    
     return SUCCESS;
 }
 
@@ -131,6 +136,16 @@ int BlockBuffer::loadBlockAndGetBufferPtr(unsigned char **bufferPtr) {
       return E_OUTOFBOUND;
     }
     Disk::readBlock(StaticBuffer::blocks[bufferNum], this->blockNum);
+  }
+  else {
+    // Increment timestamp of all occupied buffers
+    for (int i = 0; i < BUFFER_CAPACITY; i++) {
+      if (!StaticBuffer::metainfo[i].free)
+        StaticBuffer::metainfo[i].timeStamp++;
+    }
+
+    // reset timestamp of the accessed buffer
+    StaticBuffer::metainfo[bufferNum].timeStamp = 0;
   }
 
   // store the pointer to this buffer (blocks[bufferNum]) in *buffPtr
