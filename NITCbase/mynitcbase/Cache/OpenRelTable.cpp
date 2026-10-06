@@ -63,6 +63,8 @@ OpenRelTable::OpenRelTable() {
   );
 
   struct RelCacheEntry relCacheEntry;
+  relCacheEntry.dirty = false;
+  relCacheEntry.searchIndex = {-1, -1};
 
   RelCacheTable::recordToRelCatEntry(
       relCatRecord,
@@ -246,6 +248,9 @@ int OpenRelTable::openRel(char relName[ATTR_SIZE]) {
   // Allocate memory for the new RelCacheEntry
   RelCacheEntry *relCacheEntry =
       (RelCacheEntry *)malloc(sizeof(RelCacheEntry));
+  
+  relCacheEntry->dirty = false;
+  relCacheEntry->searchIndex = {-1, -1};
 
   RelCacheTable::recordToRelCatEntry(
       relCatRecord,
@@ -356,10 +361,31 @@ int OpenRelTable::closeRel(int relId) {
     return E_RELNOTOPEN;
   }
 
-  /*** free the memory allocated in the relation and attribute caches ***/
+  /****** Releasing the Relation Cache entry of the relation ******/
 
-  // free Relation Cache Entry
   if (RelCacheTable::relCache[relId] != nullptr) {
+    // If RelCatEntry has been modified
+    if (RelCacheTable::relCache[relId]->dirty) {
+
+      RecId recId = RelCacheTable::relCache[relId]->recId;
+      Attribute relCatRecord[RELCAT_NO_ATTRS];
+
+      RelCacheTable::relCatEntryToRecord(
+          &RelCacheTable::relCache[relId]->relCatEntry,
+          relCatRecord
+      );
+
+      // declaring an object of RecBuffer class to write back to the buffer
+      RecBuffer relCatBlock(recId.block);
+
+      // Write back to the buffer
+      int ret = relCatBlock.setRecord(relCatRecord, recId.slot);
+
+      if (ret != SUCCESS)
+        return ret;
+    }
+
+    // free Relation Cache Entry
     free(RelCacheTable::relCache[relId]);
     RelCacheTable::relCache[relId] = nullptr;
   }
