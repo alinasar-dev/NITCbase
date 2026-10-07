@@ -6,6 +6,60 @@
 
 bool isNumber(char *str);
 
+
+int Algebra::insert(char relName[ATTR_SIZE], int nAttrs, char record[][ATTR_SIZE]) {
+
+    // Relation & Attribute Catalog cannot modify directly
+    if (strcmp(relName, "RELATIONCAT") == 0 || strcmp(relName, "ATTRIBUTECAT") == 0)
+      return E_NOTPERMITTED;
+
+    // get the relation's rel-id
+    int relId = OpenRelTable::getRelId(relName);
+    if (relId == E_RELNOTOPEN) {
+      return E_RELNOTOPEN;    // if relation is not open
+    }
+
+    // get the relation catalog entry from relation cache
+    RelCatEntry relCatEntry;
+    int ret = RelCacheTable::getRelCatEntry(relId, &relCatEntry);
+    if (ret != SUCCESS) {
+      return ret;
+    }
+
+    // Check for number of attributes
+    if (relCatEntry.numAttrs != nAttrs) {
+      return E_NATTRMISMATCH;
+    }
+
+    // Convert 2D char array of record values to union Attribute array
+    Attribute recordValues[nAttrs];
+
+    for (int i = 0; i < nAttrs; i++) {
+        // get the attr-cat entry for the i'th attribute from the attr-cache
+        AttrCatEntry attrCatEntry;
+        ret = AttrCacheTable::getAttrCatEntry(relId, i, &attrCatEntry);
+        if (ret != SUCCESS) {
+          return ret;
+        }
+
+        int type = attrCatEntry.attrType;
+
+        if (type == NUMBER)
+        {
+          if (isNumber(record[i]))
+            recordValues[i].nVal = atof(record[i]);
+          else
+            return E_ATTRTYPEMISMATCH;
+        }
+        else if (type == STRING) {
+          strcpy(recordValues[i].sVal, record[i]);
+        }
+    }
+
+    return BlockAccess::insert(relId, recordValues);
+}
+
+
 /* used to select all the records that satisfy a condition.
 the arguments of the function are
 - srcRel - the source relation we want to select from

@@ -108,6 +108,39 @@ int RecBuffer::getSlotMap(unsigned char *slotMap) {
 }
 
 
+int RecBuffer::setSlotMap(unsigned char *slotMap) {
+    unsigned char *bufferPtr;
+    // get the starting address of the buffer containing the block
+    int ret = loadBlockAndGetBufferPtr(&bufferPtr);
+    if (ret != SUCCESS) {
+      return ret;
+    }
+
+    // get the header of the block
+    HeadInfo head;
+    ret = getHeader(&head);
+    if (ret != SUCCESS) {
+      return ret;
+    }
+
+    int numSlots = head.numSlots;
+
+    // the slotmap starts after the header
+    unsigned char *slotMapInBuffer = bufferPtr + HEADER_SIZE;
+
+    // Copy the contents of `slotMap` to the buffer replacing existing slotmap.
+    memcpy(slotMapInBuffer, slotMap, numSlots);
+
+    // mark block as dirty
+    ret = StaticBuffer::setDirtyBit(this->blockNum);
+    if (ret != SUCCESS) {
+      return ret;
+    }
+
+    return SUCCESS;
+}
+
+
 /*
 Used to get the record at slot `slotNum` into the array `rec`
 NOTE: this function expects the caller to allocate memory for `rec`
