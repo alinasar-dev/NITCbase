@@ -423,6 +423,26 @@ OpenRelTable::~OpenRelTable() {
         OpenRelTable::closeRel(i);
   }
   
+
+  // Write back modified catalog cache entries
+  for (int relId = RELCAT_RELID; relId <= ATTRCAT_RELID; relId++) {
+    if (RelCacheTable::relCache[relId] != nullptr &&
+        RelCacheTable::relCache[relId]->dirty) {
+
+      RecId recId = RelCacheTable::relCache[relId]->recId;
+      Attribute relCatRecord[RELCAT_NO_ATTRS];
+
+      RelCacheTable::relCatEntryToRecord(
+          &RelCacheTable::relCache[relId]->relCatEntry,
+          relCatRecord
+      );
+
+      RecBuffer relCatBlock(recId.block);
+      relCatBlock.setRecord(relCatRecord, recId.slot);
+    }
+  }
+
+  
   // free Relational Cache entries
   if (RelCacheTable::relCache[RELCAT_RELID] != nullptr) {
     free(RelCacheTable::relCache[RELCAT_RELID]);

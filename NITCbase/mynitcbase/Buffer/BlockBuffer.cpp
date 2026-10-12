@@ -79,6 +79,35 @@ int BlockBuffer::setHeader(struct HeadInfo *head){
 }
 
 
+void BlockBuffer::releaseBlock() {
+    // If the block is already invalid, do nothing.
+    if (this->blockNum < BLOCK_ALLOCATION_MAP_SIZE || this->blockNum >= DISK_BLOCKS)
+      return;
+
+    else {
+      int blockNum = this->blockNum;
+      // Find the buffer currently holding this block
+      int bufferNum = StaticBuffer::getBufferNum(blockNum);
+
+      // Free the buffer by setting its tableMetaInfo free flag to true
+      if (bufferNum >= 0 && bufferNum < BUFFER_CAPACITY &&
+          bufferNum != E_BLOCKNOTINBUFFER && bufferNum != E_OUTOFBOUND) {
+        
+        StaticBuffer::metainfo[bufferNum].free = true;
+        StaticBuffer::metainfo[bufferNum].dirty = false;
+        StaticBuffer::metainfo[bufferNum].blockNum = -1;
+        StaticBuffer::metainfo[bufferNum].timeStamp = -1;
+      }
+
+      // Mark the disk block as unused in the allocation map.
+      StaticBuffer::blockAllocMap[blockNum] = UNUSED_BLK;
+
+      // set the object's blockNum to INVALID_BLOCK (-1)
+      this->blockNum = INVALID_BLOCKNUM;
+    }
+}
+
+
 /* used to get the slotmap from a record block
 NOTE: this function expects the caller to allocate memory for `*slotMap`
 */
