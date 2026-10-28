@@ -62,6 +62,18 @@ int StaticBuffer::getBufferNum(int blockNum) {
 }
 
 
+/* Returns the block type for a given block number without creating a block object
+*/
+int StaticBuffer::getStaticBlockType(int blockNum){
+    // Check if blockNum is valid
+    if (blockNum < 0 || blockNum >= DISK_BLOCKS)
+      return E_OUTOFBOUND;
+
+    // Return the block type as int for blockNum from the Block allocation map.
+    return (int) StaticBuffer::blockAllocMap[blockNum];
+}
+
+
 int StaticBuffer::setDirtyBit(int blockNum){
     // find the buffer index corresponding to the block using getBufferNum().
     int bufferNum = StaticBuffer::getBufferNum(blockNum);

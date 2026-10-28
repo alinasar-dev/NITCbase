@@ -125,6 +125,9 @@ OpenRelTable::OpenRelTable() {
 
     AttrCacheEntry *attrCacheEntry = (AttrCacheEntry *)malloc(sizeof(AttrCacheEntry));
 
+    // Initialize search index
+    attrCacheEntry->searchIndex = {-1, -1};
+
     AttrCacheTable::recordToAttrCatEntry(
         attrCatRecord,
         &attrCacheEntry->attrCatEntry
@@ -162,6 +165,9 @@ OpenRelTable::OpenRelTable() {
     attrCatBlock.getRecord(attrCatRecord, i);
 
     AttrCacheEntry *attrCacheEntry = (AttrCacheEntry *)malloc(sizeof(AttrCacheEntry));
+
+    // Initialize search index
+    attrCacheEntry->searchIndex = {-1, -1};
 
     AttrCacheTable::recordToAttrCatEntry(
         attrCatRecord,
@@ -317,6 +323,9 @@ int OpenRelTable::openRel(char relName[ATTR_SIZE]) {
     AttrCacheEntry *attrCacheEntry =
         (AttrCacheEntry *)malloc(sizeof(AttrCacheEntry));
 
+    // Initialize search index
+    attrCacheEntry->searchIndex = {-1, -1};
+    
     AttrCacheTable::recordToAttrCatEntry(
         attrCatRecord,
         &attrCacheEntry->attrCatEntry

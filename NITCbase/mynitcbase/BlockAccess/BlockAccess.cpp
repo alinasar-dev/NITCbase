@@ -13,11 +13,18 @@ int BlockAccess::search(int relId, Attribute *record, char *attrName, Attribute 
         return ret;
     }
 
-    // NOTE: Indexing has not been implemented yet.
-    // Search linearly for the next matching record.
-    RecId recId = BlockAccess::linearSearch(
-        relId, attrName, attrVal, op
-    );
+    RecId recId;
+
+    // If index does not exist for the attribute
+    if (attrCatEntry.rootBlock == -1) {
+        // Search linearly for the next matching record.
+        recId = BlockAccess::linearSearch(relId, attrName, attrVal, op);
+    }
+    else {
+        // If index already exists, use B+ tree search
+        recId = BPlusTree::bPlusSearch(relId, attrName, attrVal, op);
+    }
+
     if (recId.block == -1 && recId.slot == -1) {
         return E_NOTFOUND;
     }

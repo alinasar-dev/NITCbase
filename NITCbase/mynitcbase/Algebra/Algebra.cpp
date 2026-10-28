@@ -150,9 +150,7 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
     Schema::deleteRel(targetRel);
     return ret;
   }
-
-  Attribute record[src_nAttrs];
-
+  
   /*
     The BlockAccess::search() function can either do a linearSearch or a B+ tree search. 
     Hence, reset the search index of the relation in the relation cache using RelCacheTable::resetSearchIndex().
@@ -160,9 +158,17 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
     with name given by the argument `attr`. Use AttrCacheTable::resetSearchIndex().
     Both these calls are necessary to ensure that search begins from the first record.
   */
-
-  // RelCacheTable::resetSearchIndex(/* fill arguments */);
   // AttrCacheTable::resetSearchIndex(/* fill arguments */);
+  
+  // Reset the B+ Tree search index for the condition attribute.
+  ret = AttrCacheTable::resetSearchIndex(srcRelId, attr);
+  if (ret != SUCCESS) {
+    Schema::closeRel(targetRel);
+    Schema::deleteRel(targetRel);
+    return ret;
+  }
+
+  Attribute record[src_nAttrs];
 
   while (true) {
     ret = BlockAccess::search(srcRelId, record, attr, attrVal, op);

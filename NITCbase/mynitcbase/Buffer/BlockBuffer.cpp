@@ -344,3 +344,94 @@ int compareAttrs(union Attribute attr1, union Attribute attr2, int attrType) {
     
     return 0;
 }
+
+
+/* STAGE 10: Indexing using B+ Tree Implementation */
+
+// Class constructors
+IndBuffer::IndBuffer(int blockNum)
+    : BlockBuffer(blockNum) {}
+
+IndBuffer::IndBuffer(char blockType)
+    : BlockBuffer(blockType) {}
+
+IndInternal::IndInternal()
+    : IndBuffer('I') {}
+
+IndInternal::IndInternal(int blockNum)
+    : IndBuffer(blockNum) {}
+
+IndLeaf::IndLeaf()
+    : IndBuffer('L') {}
+
+IndLeaf::IndLeaf(int blockNum)
+    : IndBuffer(blockNum) {}
+
+
+// Gives the indexNum-th entry of the block.
+
+int IndInternal::getEntry(void *ptr, int indexNum) {
+    // if the indexNum is not valid
+    if (indexNum < 0 || indexNum >= MAX_KEYS_INTERNAL)
+        return E_OUTOFBOUND;
+
+    /* get the starting address of the buffer containing the block
+       using loadBlockAndGetBufferPtr(&bufferPtr). */
+    unsigned char *bufferPtr;
+    int ret = loadBlockAndGetBufferPtr(&bufferPtr);
+    if (ret != SUCCESS)
+        return ret;
+
+    // typecast the void pointer to an internal entry pointer
+    struct InternalEntry *internalEntry = (struct InternalEntry *)ptr;
+
+    /*
+    - copy the entries from the indexNum`th entry to *internalEntry
+    - the lChild and rChild fields of InternalEntry are of type int32_t
+    */
+
+    /* the indexNum'th entry will begin at an offset of
+       HEADER_SIZE + (indexNum * (sizeof(int) + ATTR_SIZE))  from bufferPtr
+       [why?  prev.rChild & curr.lChild are same => consider it as one (24 - 4 = 20 Bytes)]
+    */
+    unsigned char *entryPtr = bufferPtr + HEADER_SIZE + (indexNum * 20);
+
+    memcpy(&(internalEntry->lChild), entryPtr, sizeof(int32_t));
+    memcpy(&(internalEntry->attrVal), entryPtr + 4, sizeof(Attribute));
+    memcpy(&(internalEntry->rChild), entryPtr + 20, 4);
+
+    return SUCCESS;
+}
+
+int IndLeaf::getEntry(void *ptr, int indexNum) {
+    if (indexNum < 0 || indexNum >= MAX_KEYS_LEAF)
+        return E_OUTOFBOUND;
+
+    unsigned char *bufferPtr;
+    int ret = loadBlockAndGetBufferPtr(&bufferPtr);
+    if (ret != SUCCESS)
+        return ret;
+
+    // copy the indexNum'th Index entry in buffer to memory ptr using memcpy
+    struct Index *leafEntry = (Index *) ptr;
+
+    /* the indexNum'th entry will begin at an offset of
+       HEADER_SIZE + (indexNum * LEAF_ENTRY_SIZE)  from bufferPtr */
+    unsigned char *entryPtr = bufferPtr + HEADER_SIZE + (indexNum * LEAF_ENTRY_SIZE);
+
+    memcpy(&leafEntry->attrVal, entryPtr, sizeof(Attribute));
+    memcpy(&leafEntry->block, entryPtr + 16, sizeof(int32_t));
+    memcpy(&leafEntry->slot, entryPtr + 16 + 4, sizeof(int32_t));
+    
+    return SUCCESS;
+}
+
+
+// We'll implement this in later stages
+int IndInternal::setEntry(void *ptr, int indexNum) {
+  return 0;
+}
+
+int IndLeaf::setEntry(void *ptr, int indexNum) {
+  return 0;
+}
