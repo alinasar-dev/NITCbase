@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+// Stage 10, Q2: Count comparisons in B+ Tree search.
+int bPlusComparisons = 0;
 
 RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attrVal, int op) {
     
@@ -133,6 +135,8 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
                 if (ret != SUCCESS)
                     return {-1, -1};
 
+                // Internal-node comparison
+                bPlusComparisons++;
                 int cmpVal = compareAttrs(intEntry.attrVal, attrVal, attrType);
 
                 if (((op == EQ || op == GE) && cmpVal >= 0) ||
@@ -181,6 +185,8 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
             if (ret != SUCCESS)
                 return {-1, -1};
 
+            // Leaf-entry comparison
+            bPlusComparisons++;
             int cmpVal = compareAttrs(leafEntry.attrVal, attrVal, attrType);
 
             if (

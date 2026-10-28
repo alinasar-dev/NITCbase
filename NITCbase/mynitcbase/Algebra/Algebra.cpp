@@ -4,6 +4,10 @@
 #include <cstdlib>
 #include <cstring>
 
+// Counters defined in BlockAccess.cpp and BPlusTree.cpp.
+extern int linearComparisons;
+extern int bPlusComparisons;
+
 bool isNumber(char *str);
 
 
@@ -170,6 +174,10 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
 
   Attribute record[src_nAttrs];
 
+  // Reset counters at the start of this SELECT query.
+  linearComparisons = 0;
+  bPlusComparisons = 0;
+
   while (true) {
     ret = BlockAccess::search(srcRelId, record, attr, attrVal, op);
     if (ret == E_NOTFOUND)
@@ -190,6 +198,11 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
       return ret;
     }
   }
+
+  // Display the total comparisons for this SELECT query.
+  printf("\n--- Search Comparison Count ---\n");
+  printf("Linear search comparisons: %d\n", linearComparisons);
+  printf("B+ Tree comparisons: %d\n", bPlusComparisons);
 
   // Close the target relation after filling it.
   ret = Schema::closeRel(targetRel);
