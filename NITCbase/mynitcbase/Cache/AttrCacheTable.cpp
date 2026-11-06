@@ -56,6 +56,54 @@ int AttrCacheTable::getAttrCatEntry(int relId, char attrName[ATTR_SIZE], AttrCat
 }
 
 
+int AttrCacheTable::setAttrCatEntry(int relId, char attrName[ATTR_SIZE], AttrCatEntry *attrCatBuf) {
+  if (relId < 0 || relId >= MAX_OPEN) {
+    return E_OUTOFBOUND;
+  }
+
+  if (attrCache[relId] == nullptr) {
+    return E_RELNOTOPEN;
+  }
+
+  for (AttrCacheEntry *entry = attrCache[relId]; 
+       entry != nullptr; 
+       entry = entry->next) {
+    
+    if(strcmp(entry->attrCatEntry.attrName, attrName) == 0) {
+      // update the attribute catalog entry in the cache
+      entry->attrCatEntry = *attrCatBuf;
+      entry->dirty = true;
+
+      return SUCCESS;
+    }
+  }
+
+  return E_ATTRNOTEXIST;
+}
+
+int AttrCacheTable::setAttrCatEntry(int relId, int attrOffset, AttrCatEntry *attrCatBuf) {
+
+  if (relId < 0 || relId >= MAX_OPEN)
+    return E_OUTOFBOUND;
+
+  if (attrCache[relId] == nullptr)
+    return E_RELNOTOPEN;
+
+  for (AttrCacheEntry *entry = attrCache[relId]; entry != nullptr; entry = entry->next) {
+
+    if (entry->attrCatEntry.offset == attrOffset) {
+      // update the attribute catalog entry in the cache
+      entry->attrCatEntry = *attrCatBuf;
+      entry->dirty = true;
+
+      return SUCCESS;
+    }
+  }
+
+  return E_ATTRNOTEXIST;
+}
+
+
 /* Converts a attribute catalog record to AttrCatEntry struct
     We get the record as Attribute[] from the BlockBuffer.getRecord() function.
     This function will convert that to a struct AttrCatEntry type.
@@ -71,6 +119,21 @@ void AttrCacheTable::recordToAttrCatEntry(union Attribute record[ATTRCAT_NO_ATTR
   attrCatEntry->primaryFlag = (int)record[ATTRCAT_PRIMARY_FLAG_INDEX].nVal;
   attrCatEntry->rootBlock = (int)record[ATTRCAT_ROOT_BLOCK_INDEX].nVal;
   attrCatEntry->offset = (int)record[ATTRCAT_OFFSET_INDEX].nVal;
+}
+
+/* Converts an AttrCatEntry structure to an Attribute Catalog record.
+   This record can then be written to disk using RecBuffer::setRecord().
+*/
+void AttrCacheTable::attrCatEntryToRecord(AttrCatEntry *attrCatEntry, 
+                                          union Attribute record[ATTRCAT_NO_ATTRS]) {
+
+  strcpy(record[ATTRCAT_REL_NAME_INDEX].sVal, attrCatEntry->relName);
+  strcpy(record[ATTRCAT_ATTR_NAME_INDEX].sVal, attrCatEntry->attrName);
+
+  record[ATTRCAT_ATTR_TYPE_INDEX].nVal = attrCatEntry->attrType;
+  record[ATTRCAT_PRIMARY_FLAG_INDEX].nVal = attrCatEntry->primaryFlag;
+  record[ATTRCAT_ROOT_BLOCK_INDEX].nVal = attrCatEntry->rootBlock;
+  record[ATTRCAT_OFFSET_INDEX].nVal = attrCatEntry->offset;
 }
 
 

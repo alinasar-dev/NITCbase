@@ -39,6 +39,8 @@ int BlockBuffer::getHeader(struct HeadInfo *head) {
   }
 
   // populate the numEntries, numAttrs and numSlots fields in *head
+  memcpy(&head->blockType, bufferPtr, 4);
+  memcpy(&head->pblock, bufferPtr + 4, 4);
   memcpy(&head->lblock, bufferPtr + 8, 4);
   memcpy(&head->rblock, bufferPtr + 12, 4);
   memcpy(&head->numEntries, bufferPtr + 16, 4);
@@ -427,11 +429,55 @@ int IndLeaf::getEntry(void *ptr, int indexNum) {
 }
 
 
-// We'll implement this in later stages
 int IndInternal::setEntry(void *ptr, int indexNum) {
-  return 0;
+    if (indexNum < 0 || indexNum >= MAX_KEYS_INTERNAL)
+      return E_OUTOFBOUND;
+
+    unsigned char *bufferPtr;
+    // get the starting address of the buffer containing the block
+    int ret = loadBlockAndGetBufferPtr(&bufferPtr);
+    if (ret != SUCCESS) {
+      return ret;
+    }
+
+    // typecast the void pointer to an internal entry pointer
+    struct InternalEntry *internalEntry = (struct InternalEntry *)ptr;
+
+    /*
+    - copy the entries from *internalEntry to the indexNum`th entry
+        the indexNum'th entry will begin at an offset of
+        HEADER_SIZE + (indexNum * (sizeof(int) + ATTR_SIZE))  from bufferPtr 
+    */
+    unsigned char *entryPtr = bufferPtr + HEADER_SIZE + (indexNum * 20);
+
+    memcpy(entryPtr, &(internalEntry->lChild), 4);
+    memcpy(entryPtr + 4, &(internalEntry->attrVal), ATTR_SIZE);
+    memcpy(entryPtr + 20, &(internalEntry->rChild), 4);
+
+
+    ret = StaticBuffer::setDirtyBit(this->blockNum);
+    return ret;
 }
 
 int IndLeaf::setEntry(void *ptr, int indexNum) {
-  return 0;
+    if (indexNum < 0 || indexNum >= MAX_KEYS_LEAF)
+        return E_OUTOFBOUND;
+
+    unsigned char *bufferPtr;
+    // get the starting address of the buffer containing the block
+    int ret = loadBlockAndGetBufferPtr(&bufferPtr);
+    if (ret != SUCCESS) {
+      return ret;
+    }
+
+    /*
+    - copy the Index at ptr to indexNum'th entry in the buffer using memcpy
+        the indexNum'th entry will begin at an offset of
+        HEADER_SIZE + (indexNum * LEAF_ENTRY_SIZE)  from bufferPtr
+    */
+    unsigned char *entryPtr = bufferPtr + HEADER_SIZE + (indexNum * LEAF_ENTRY_SIZE);
+    memcpy(entryPtr, (struct Index *)ptr, LEAF_ENTRY_SIZE);
+
+    ret = StaticBuffer::setDirtyBit(this->blockNum);
+    return ret;
 }

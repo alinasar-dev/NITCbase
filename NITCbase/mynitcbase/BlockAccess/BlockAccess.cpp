@@ -331,7 +331,7 @@ int BlockAccess::insert(int relId, Attribute *record) {
         // Otherwise, allocate a new record block & get block number of it
         RecBuffer newBlock;
         int newBlockNum = newBlock.getBlockNum();
-        if (ret == E_DISKFULL) {
+        if (newBlockNum == E_DISKFULL) {
             return E_DISKFULL;
         }
 
@@ -446,6 +446,38 @@ int BlockAccess::insert(int relId, Attribute *record) {
         return ret;
     }
 
+
+    /* B+ Tree Insertions */
+    // (the following section is only relevant once indexing has been implemented)
+
+    int flag = SUCCESS;
+    
+    // Iterate over all attributes of the relation
+    for (int attrOffset = 0; attrOffset < numOfAttributes; attrOffset++) {
+
+        // Get the attribute catalog entry
+        AttrCatEntry attrCatEntry;
+        ret = AttrCacheTable::getAttrCatEntry(relId, attrOffset, &attrCatEntry);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+
+        // Check whether an index exists for this attribute
+        if (attrCatEntry.rootBlock != -1) {
+            // Insert the new record into the attribute's B+ tree
+            int ret = BPlusTree::bPlusInsert(relId, attrCatEntry.attrName, record[attrOffset], rec_id);
+
+            if (ret == E_DISKFULL) {
+                // Index was destroyed due to insufficient disk space
+                flag = E_INDEX_BLOCKS_RELEASED;
+            }
+            else if (ret != SUCCESS) {
+                return ret;
+            }
+        }
+    }
+
+    return flag;
     return SUCCESS;
 }
 
@@ -656,6 +688,11 @@ int BlockAccess::deleteRelation(char relName[ATTR_SIZE]) {
         // if index exists for the attribute (rootBlock != -1), call bplus destroy
         if (rootBlock != -1) {
             // delete the bplus tree rooted at rootBlock using BPlusTree::bPlusDestroy()
+            ret = BPlusTree::bPlusDestroy(rootBlock);
+
+            if (ret != SUCCESS) {
+                return ret;
+            }
         }
     }
 

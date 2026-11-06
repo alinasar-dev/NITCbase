@@ -399,8 +399,32 @@ int OpenRelTable::closeRel(int relId) {
     RelCacheTable::relCache[relId] = nullptr;
   }
 
-  // free Attribute Cache Linked-list
+
+  /* Write back modified Attribute Cache entries */
   AttrCacheEntry *entry = AttrCacheTable::attrCache[relId];
+
+  while (entry != nullptr) {
+    if (entry->dirty) {
+
+      RecId recId = entry->recId;
+      Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
+      AttrCacheTable::attrCatEntryToRecord(&entry->attrCatEntry, attrCatRecord);
+
+      RecBuffer attrCatBlock(recId.block);
+      int ret = attrCatBlock.setRecord(attrCatRecord, recId.slot);
+
+      if (ret != SUCCESS)
+        return ret;
+
+      // Mark the entry as clean after successful write-back
+      entry->dirty = false;
+    }
+
+    entry = entry->next;
+  }
+
+  // free Attribute Cache Linked-list
+  entry = AttrCacheTable::attrCache[relId];
 
   while (entry != nullptr) {
     AttrCacheEntry *next = entry->next;
