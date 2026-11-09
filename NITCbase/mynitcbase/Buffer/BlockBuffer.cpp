@@ -3,6 +3,8 @@
 
 #include "BlockBuffer.h"
 
+extern int blockAccessCount;
+
 // Class constructor
 BlockBuffer::BlockBuffer(char blockType) {
     int type = (blockType == 'R') ? REC :
@@ -245,6 +247,8 @@ int BlockBuffer::loadBlockAndGetBufferPtr(unsigned char **bufferPtr) {
     if (bufferNum == E_OUTOFBOUND) {
       return E_OUTOFBOUND;
     }
+
+    blockAccessCount++;
     Disk::readBlock(StaticBuffer::blocks[bufferNum], this->blockNum);
   }
   else {

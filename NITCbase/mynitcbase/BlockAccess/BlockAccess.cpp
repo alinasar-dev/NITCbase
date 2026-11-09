@@ -2,8 +2,14 @@
 
 #include <cstring>
 
+#include <iostream>
+using namespace std;
+
 // Stage 10, Q2: Count comparisons in linear search.
 int linearComparisons = 0;
+int blockAccessCount = 0;
+
+int comparisonsPerBlock[DISK_BLOCKS] = {0};
 
 int BlockAccess::search(int relId, Attribute *record, char *attrName, Attribute attrVal, int op) {
     // Check whether the requested attribute exists.
@@ -138,6 +144,8 @@ RecId BlockAccess::linearSearch(int relId, char attrName[ATTR_SIZE], union Attri
 
         // set cmpVal using compareAttrs() -> will store the difference between the attributes
         linearComparisons++;
+
+        comparisonsPerBlock[block]++;
 
         int cmpVal = compareAttrs(
             recordAttr,

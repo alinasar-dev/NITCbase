@@ -21,6 +21,9 @@ class BPlusTree {
   static int bPlusInsert(int relId, char attrName[ATTR_SIZE], union Attribute attrVal, RecId recordId);
   static RecId bPlusSearch(int relId, char attrName[ATTR_SIZE], union Attribute attrVal, int op);
   static int bPlusDestroy(int rootBlockNum);
+
+  // Implementation for viva
+  static void printTreeByLevel(int relId, char attrName[ATTR_SIZE]);
 };
 
 #endif  // NITCBASE_BPLUSTREE_H

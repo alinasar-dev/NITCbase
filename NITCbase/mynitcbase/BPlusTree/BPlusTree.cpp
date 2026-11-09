@@ -1,5 +1,11 @@
 #include "BPlusTree.h"
 
+#include <iostream>
+#include <queue>
+using namespace std;
+
+extern int comparisonsPerBlock[DISK_BLOCKS];
+
 #include <cstring>
 
 // Stage 10, Q2: Count comparisons in B+ Tree search.
@@ -23,6 +29,58 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
     // declare variables block and index which will be used during search
     int block, index;
     int attrType = attrCatEntry.attrType;
+
+    // Print the root block of the B+ Tree
+    static bool rootPrinted = false;
+
+    if (!rootPrinted) {
+
+        int rootBlock = attrCatEntry.rootBlock;
+
+        cout << "\nRoot Block: " << rootBlock << endl;
+
+        int rootType = StaticBuffer::getStaticBlockType(rootBlock);
+        HeadInfo rootHead;
+
+        if (rootType == IND_INTERNAL) {
+            IndInternal root(rootBlock);
+            root.getHeader(&rootHead);
+
+            for (int i = 0; i < rootHead.numEntries; i++) {
+                InternalEntry entry;
+                root.getEntry(&entry, i);
+
+                cout << "Key: ";
+
+                if (attrType == NUMBER)
+                    cout << entry.attrVal.nVal;
+                else
+                    cout << entry.attrVal.sVal;
+
+                cout << endl;
+            }
+        }
+        else if (rootType == IND_LEAF) {
+            IndLeaf root(rootBlock);
+            root.getHeader(&rootHead);
+
+            for (int i = 0; i < rootHead.numEntries; i++) {
+                Index entry;
+                root.getEntry(&entry, i);
+
+                cout << "Key: ";
+
+                if (attrType == NUMBER)
+                    cout << entry.attrVal.nVal;
+                else
+                    cout << entry.attrVal.sVal;
+
+                cout << endl;
+            }
+        }
+
+        rootPrinted = true;
+    }
 
     if (searchIndex.block == -1 && searchIndex.index == -1) {
         // (search is done for the first time)
@@ -137,6 +195,8 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
 
                 // Internal-node comparison
                 bPlusComparisons++;
+                comparisonsPerBlock[block]++;
+
                 int cmpVal = compareAttrs(intEntry.attrVal, attrVal, attrType);
 
                 if (((op == EQ || op == GE) && cmpVal >= 0) ||
@@ -187,6 +247,8 @@ RecId BPlusTree::bPlusSearch(int relId, char attrName[ATTR_SIZE], Attribute attr
 
             // Leaf-entry comparison
             bPlusComparisons++;
+            comparisonsPerBlock[block]++;
+            
             int cmpVal = compareAttrs(leafEntry.attrVal, attrVal, attrType);
 
             if (
@@ -1043,4 +1105,109 @@ int BPlusTree::createNewRoot(int relId, char attrName[ATTR_SIZE], Attribute attr
     }
 
     return SUCCESS;
+}
+
+
+void BPlusTree::printTreeByLevel(int relId, char attrName[ATTR_SIZE]) {
+
+    AttrCatEntry attrCatEntry;
+    if (AttrCacheTable::getAttrCatEntry(relId, attrName, &attrCatEntry) != SUCCESS) {
+        cout << "Unable to load attribute info\n";
+        return;
+    }
+
+    int rootBlock = attrCatEntry.rootBlock;
+
+    if (rootBlock == -1) {
+        cout << "B+ Tree is empty / index doesn't exist!\n";
+        return;
+    }
+
+    int attrType = attrCatEntry.attrType;
+
+    queue<pair<int, int>> q;
+    q.push({rootBlock, 0});
+
+    int currentLevel = -1;
+
+    cout << "\n========== B+ TREE ==========\n";
+
+    while (!q.empty()) {
+
+        int block = q.front().first;
+        int level = q.front().second;
+        q.pop();
+
+        if (level != currentLevel) {
+            currentLevel = level;
+            cout << "\nLevel " << level << ":\n";
+        }
+
+        int type = StaticBuffer::getStaticBlockType(block);
+
+        if (type == IND_INTERNAL) {
+
+            IndInternal node(block);
+            HeadInfo header;
+            node.getHeader(&header);
+
+            cout << "Internal Node (Block " << block << "): [";
+
+            for (int i = 0; i < header.numEntries; i++) {
+                InternalEntry entry;
+                node.getEntry(&entry, i);
+
+                if (attrType == NUMBER)
+                    cout << entry.attrVal.nVal;
+                else
+                    cout << entry.attrVal.sVal;
+
+                if (i != header.numEntries - 1)
+                    cout << ", ";
+            }
+
+            cout << "]\n";
+
+            if (header.numEntries > 0) {
+                InternalEntry entry;
+
+                node.getEntry(&entry, 0);
+                if (entry.lChild != -1)
+                    q.push({entry.lChild, level + 1});
+
+                for (int i = 0; i < header.numEntries; i++) {
+                    node.getEntry(&entry, i);
+
+                    if (entry.rChild != -1)
+                        q.push({entry.rChild, level + 1});
+                }
+            }
+        }
+
+        else if (type == IND_LEAF) {
+
+            IndLeaf node(block);
+            HeadInfo header;
+            node.getHeader(&header);
+
+            cout << "Leaf Node (Block " << block << "): [";
+
+            for (int i = 0; i < header.numEntries; i++) {
+                Index entry;
+                node.getEntry(&entry, i);
+
+                if (attrType == NUMBER)
+                    cout << entry.attrVal.nVal;
+                else
+                    cout << entry.attrVal.sVal;
+
+                if (i != header.numEntries - 1)
+                    cout << ", ";
+            }
+
+            cout << "]\n";
+        }
+    }
+
+    cout << "\n============================\n";
 }

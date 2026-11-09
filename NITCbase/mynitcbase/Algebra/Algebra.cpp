@@ -3,6 +3,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
+using namespace std;
+
+extern int blockAccessCount;
+
+// No. of Comparisons per block
+extern int comparisonsPerBlock[DISK_BLOCKS];
 
 // Counters defined in BlockAccess.cpp and BPlusTree.cpp.
 extern int linearComparisons;
@@ -178,6 +185,10 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
   linearComparisons = 0;
   bPlusComparisons = 0;
 
+  for (int i = 0; i < DISK_BLOCKS; i++) {
+    comparisonsPerBlock[i] = 0;
+  }
+
   while (true) {
     ret = BlockAccess::search(srcRelId, record, attr, attrVal, op);
     if (ret == E_NOTFOUND)
@@ -199,10 +210,26 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
     }
   }
 
+  cout << "Number of block accesses: " << blockAccessCount << endl;
+
+  // print B+ Tree used for the condition attribute
+  // BPlusTree::printTreeByLevel(srcRelId, attr);
+
   // Display the total comparisons for this SELECT query.
   printf("\n--- Search Comparison Count ---\n");
   printf("Linear search comparisons: %d\n", linearComparisons);
   printf("B+ Tree comparisons: %d\n", bPlusComparisons);
+
+  /*
+  printf("\nComparisons per block:\n");
+
+  for (int i = 0; i < DISK_BLOCKS; i++) {
+    if (comparisonsPerBlock[i] > 0) {
+      printf("Block %d: %d comparisons\n",
+            i, comparisonsPerBlock[i]);
+    }
+  }
+  */
 
   // Close the target relation after filling it.
   ret = Schema::closeRel(targetRel);
